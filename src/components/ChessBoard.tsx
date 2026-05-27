@@ -13,8 +13,8 @@ interface ChessBoardProps {
 
 // Convert unicode symbols for premium minimalist visual feel
 const pieceSymbols: Record<PieceColor, Record<string, string>> = {
-  w: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' },
-  b: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' }
+  w: { p: '♟\uFE0E', r: '♜\uFE0E', n: '♞\uFE0E', b: '♝\uFE0E', q: '♛\uFE0E', k: '♚\uFE0E' },
+  b: { p: '♟\uFE0E', r: '♜\uFE0E', n: '♞\uFE0E', b: '♝\uFE0E', q: '♛\uFE0E', k: '♚\uFE0E' }
 };
 
 interface PieceWithId extends Piece {
