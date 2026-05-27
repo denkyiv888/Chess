@@ -1,0 +1,6 @@
+{
+  "name": "Chess",
+  "description": "An elegant, Apple-inspired chess platform featuring a Jony Ive-style minimalist frosted glass interface, real-time multiplayer, scalable AI engine levels, and clean game analytics dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
