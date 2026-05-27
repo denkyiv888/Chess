@@ -7,7 +7,7 @@ import { BoardManager, parseSquare, toSquare } from '../utils/chessEngine';
 interface ChessBoardProps {
   game: ChessGame;
   userId: string;
-  onPostMove: (from: Square, to: Square) => void;
+  onPostMove: (from: Square, to: Square, promotion?: PieceType) => void;
   onResetGame?: () => void;
 }
 
@@ -16,6 +16,13 @@ const pieceSymbols: Record<PieceColor, Record<string, string>> = {
   w: { p: '♟\uFE0E', r: '♜\uFE0E', n: '♞\uFE0E', b: '♝\uFE0E', q: '♛\uFE0E', k: '♚\uFE0E' },
   b: { p: '♟\uFE0E', r: '♜\uFE0E', n: '♞\uFE0E', b: '♝\uFE0E', q: '♛\uFE0E', k: '♚\uFE0E' }
 };
+
+const PROMOTION_PIECES: { type: PieceType; name: string; symbol: string }[] = [
+  { type: 'q', name: 'Queen', symbol: '♛\uFE0E' },
+  { type: 'r', name: 'Rook', symbol: '♜\uFE0E' },
+  { type: 'b', name: 'Bishop', symbol: '♝\uFE0E' },
+  { type: 'n', name: 'Knight', symbol: '♞\uFE0E' }
+];
 
 interface PieceWithId extends Piece {
   id: string;
@@ -95,6 +102,7 @@ export default function ChessBoard({ game, userId, onPostMove, onResetGame }: Ch
   const [uiError, setUiError] = useState<string | null>(null);
   const [uiMessage, setUiMessage] = useState<string | null>(null);
   const [showOutcomeOverlay, setShowOutcomeOverlay] = useState<boolean>(true);
+  const [promotionPending, setPromotionPending] = useState<{ from: Square; to: Square } | null>(null);
 
   // Re-generate board state on changes or playback rewind
   const currentFen = activePlaybackIndex === -1 
@@ -278,7 +286,15 @@ export default function ChessBoard({ game, userId, onPostMove, onResetGame }: Ch
     if (selectedSquare) {
       const isLegal = legalMovesForSelected.some(m => m.to === sq);
       if (isLegal) {
-        onPostMove(selectedSquare, sq);
+        const { r: rFrom, c: cFrom } = parseSquare(selectedSquare);
+        const { r: rTo } = parseSquare(sq);
+        const movingPiece = board[rFrom][cFrom];
+        
+        if (movingPiece && movingPiece.type === 'p' && (rTo === 0 || rTo === 7)) {
+          setPromotionPending({ from: selectedSquare, to: sq });
+        } else {
+          onPostMove(selectedSquare, sq);
+        }
         setSelectedSquare(null);
         return;
       }
@@ -545,6 +561,85 @@ export default function ChessBoard({ game, userId, onPostMove, onResetGame }: Ch
                         </button>
                       )}
                     </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Elegant Pawn Promotion Overlay */}
+            <AnimatePresence>
+              {promotionPending && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-[#F5F5F7]/85 backdrop-blur-md z-45 flex flex-col items-center justify-center p-6 text-center select-none"
+                  id="pawn_promotion_overlay"
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, y: 15 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 15 }}
+                    transition={{ type: "spring", stiffness: 220, damping: 25, mass: 0.8 }}
+                    className="max-w-xs w-full bg-white border border-[#D2D2D7]/50 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-4 relative"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-[#E8E8ED] flex items-center justify-center text-3xl shadow-sm border border-white">
+                      👑
+                    </div>
+
+                    <div>
+                      <h4 className="font-display text-lg font-medium tracking-tight text-zinc-950 mb-1">
+                        Pawn Promotion
+                      </h4>
+                      <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-wider font-semibold">
+                        Select promotion piece
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 w-full my-1">
+                      {PROMOTION_PIECES.map(({ type, name, symbol }) => {
+                        const promoterColor = currentTurn;
+                        return (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              onPostMove(promotionPending.from, promotionPending.to, type);
+                              setPromotionPending(null);
+                            }}
+                            className="flex flex-col items-center justify-center p-3 rounded-2xl border border-zinc-150 bg-[#F5F5F7] hover:bg-[#E8E8ED] active:scale-95 transition-all text-center cursor-pointer group"
+                          >
+                            <span 
+                              className={`text-4xl leading-none mb-1 select-none transition-transform group-hover:scale-110 ${
+                                promoterColor === 'w' 
+                                  ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]' 
+                                  : 'text-[#1D1D1F] drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]'
+                              }`}
+                              style={promoterColor === 'w' ? {
+                                WebkitTextStroke: '1.2px #1D1D1F',
+                                textStroke: '1.2px #1D1D1F',
+                                paintOrder: 'stroke fill'
+                              } : {
+                                WebkitTextStroke: '0.6px #1D1D1F',
+                                textStroke: '0.6px #1D1D1F',
+                                paintOrder: 'stroke fill'
+                              }}
+                            >
+                              {symbol}
+                            </span>
+                            <span className="text-xs font-semibold text-zinc-700 font-sans group-hover:text-zinc-950">
+                              {name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setPromotionPending(null)}
+                      className="w-full py-2.5 rounded-xl border border-zinc-200 text-zinc-600 bg-white hover:bg-zinc-50 text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      Cancel Move
+                    </button>
                   </motion.div>
                 </motion.div>
               )}

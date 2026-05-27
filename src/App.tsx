@@ -229,7 +229,7 @@ export default function App() {
   };
 
   // Post Chess Move
-  const handlePostMove = async (from: string, to: string) => {
+  const handlePostMove = async (from: string, to: string, promotion?: string) => {
     if (!user || !activeGame) return;
     try {
       const response = await fetch(`/api/games/${activeGame.id}/move`, {
@@ -238,7 +238,8 @@ export default function App() {
         body: JSON.stringify({
           from,
           to,
-          playerId: user.id
+          playerId: user.id,
+          promotion
         })
       });
 

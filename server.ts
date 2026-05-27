@@ -271,7 +271,7 @@ app.post('/api/games/:id/join', (req, res) => {
 
 // Post Move Endpoint (supports local move posting + auto computer play)
 app.post('/api/games/:id/move', (req, res) => {
-  const { from, to, playerId } = req.body;
+  const { from, to, playerId, promotion } = req.body;
   const game = games[req.params.id];
   if (!game) {
     res.status(404).json({ error: 'Game not found.' });
@@ -289,7 +289,7 @@ app.post('/api/games/:id/move', (req, res) => {
     return;
   }
 
-  const executedMove = bm.makeMove(from, to);
+  const executedMove = bm.makeMove(from, to, promotion);
   if (!executedMove) {
     res.status(400).json({ error: 'Illegal move transaction parsed.' });
     return;

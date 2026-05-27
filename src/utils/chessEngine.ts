@@ -457,7 +457,7 @@ export class BoardManager {
   }
 
   // Perform full rule-abiding chess move
-  makeMove(from: Square, to: Square): ChessMove | null {
+  makeMove(from: Square, to: Square, promotion?: PieceType): ChessMove | null {
     const legal = this.getLegalMoves();
     const action = legal.find(m => m.from === from && m.to === to);
     if (!action) return null;
@@ -517,10 +517,11 @@ export class BoardManager {
     // Move piece
     let finalPiece = piece;
     let promo: PieceType | undefined;
-    // Auto Queen promote
+    // Auto or custom promote
     if (piece.type === 'p' && (rTo === 0 || rTo === 7)) {
-      finalPiece = { type: 'q', color };
-      promo = 'q';
+      const pType = promotion || 'q';
+      finalPiece = { type: pType, color };
+      promo = pType;
     }
 
     this.board[rTo][cTo] = finalPiece;
